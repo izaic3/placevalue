@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Place Value (Dropdown)</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --panel:#101823; --panel2:#0f1620; --text:#e6eef7; --muted:#9bb0c6;
+      --line:#1d2a3a; --accent:#5bd6ff; --good:#7cff9b; --bad:#ff6b6b; --warn:#ffd36a;
+      --radius:16px;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      background: radial-gradient(1200px 700px at 20% -10%, rgba(91,214,255,.18), transparent 55%),
+                  radial-gradient(1000px 600px at 90% 0%, rgba(124,255,155,.12), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      overflow:hidden; /* no page scrolling */
+    }
+    .wrap{
+      height:100vh;
+      max-width:1100px;
+      margin:0 auto;
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:10px 12px;
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(16,24,35,.92), rgba(16,24,35,.78));
+      box-shadow: var(--shadow);
+      min-height: 54px;
+    }
+    .pillRow{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .pill{
+      border:1px solid var(--line);
+      border-radius: 999px;
+      padding:6px 10px;
+      background: rgba(15,22,32,.85);
+      font-size:13px;
+      color: var(--muted);
+      white-space:nowrap;
+    }
+    .pill strong{ color: var(--text); font-weight:800; }
+
+    .grid{
+      flex:1 1 auto;
+      display:grid;
+      grid-template-columns: 340px 1fr;
+      gap:10px;
+      min-height:0;
+    }
+    @media (max-width: 900px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(16,24,35,.72);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+    }
+    .card .body{
+      padding:12px;
+      flex:1 1 auto;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    select{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius: 12px;
+      padding:10px 10px;
+      background: rgba(11,15,20,.75);
+      color: var(--text);
+      font-size:14px;
+      outline:none;
+    }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .row > *{ flex:1 1 140px; }
+
+    .btnRow{ display:flex; gap:10px; flex-wrap:wrap; }
+    button{
+      flex: 1 1 140px;
+      border:1px solid var(--line);
+      border-radius: 14px;
+      padding:10px 12px;
+      background: rgba(15,22,32,.9);
+      color: var(--text);
+      font-weight:800;
+      cursor:pointer;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease;
+    }
+    button:hover{ border-color: rgba(91,214,255,.55); }
+    button:active{ transform: translateY(1px); }
+    .primary{
+      background: linear-gradient(180deg, rgba(91,214,255,.22), rgba(15,22,32,.92));
+      border-color: rgba(91,214,255,.6);
+    }
+    .good{
+      background: linear-gradient(180deg, rgba(124,255,155,.18), rgba(15,22,32,.92));
+      border-color: rgba(124,255,155,.55);
+    }
+    .danger{
+      background: linear-gradient(180deg, rgba(255,107,107,.18), rgba(15,22,32,.92));
+      border-color: rgba(255,107,107,.55);
+    }
+    .mutedBtn{ color: var(--muted); font-weight:800; }
+
+    /* Problem area */
+    .panelTitle{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      margin:0 0 2px;
+      font-weight:900;
+      color: var(--text);
+      font-size: 14px;
+      letter-spacing:.2px;
+    }
+    .bigNumber{
+      font-family: var(--mono);
+      font-size: clamp(34px, 4.6vw, 64px);
+      letter-spacing: .5px;
+      line-height:1.05;
+      margin: 0;
+      word-break: break-word;
+    }
+    .sub{
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height:1.25;
+    }
+
+    .answerArea{ display:grid; gap:10px; margin-top:2px; }
+    .inline{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+    .inline .grow{ flex: 1 1 220px; }
+    .inline .btnBox{ flex: 0 0 180px; }
+    @media (max-width: 520px){
+      .inline .btnBox{ flex: 1 1 160px; }
+    }
+
+    .feedback{
+      border:1px dashed rgba(155,176,198,.35);
+      border-radius: 14px;
+      padding:10px 12px;
+      background: rgba(15,22,32,.35);
+      min-height: 44px;
+      font-size:14px;
+    }
+    .feedback .ok{ color: var(--good); font-weight:900; }
+    .feedback .no{ color: var(--bad); font-weight:900; }
+    .feedback .warn{ color: var(--warn); font-weight:900; }
+
+    details{
+      border:1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(11,15,20,.55);
+      overflow:hidden;
+    }
+    summary{
+      cursor:pointer;
+      padding:10px 12px;
+      font-weight:900;
+      user-select:none;
+      list-style:none;
+    }
+    summary::-webkit-details-marker{ display:none; }
+    .hintBody{ padding: 0 12px 12px; color: var(--muted); line-height:1.35; font-size:13px; }
+
+    .noScroll{ overflow:hidden; }
+
+    /* Compact "place value of each digit" layout (fits without scrolling) */
+    .pvWrap{
+      margin-top:8px;
+      border:1px solid rgba(155,176,198,.2);
+      border-radius:12px;
+      background: rgba(16,24,35,.55);
+      padding:8px;
+    }
+    .pvTitle{
+      font-weight:900;
+      color: var(--text);
+      font-size:12px;
+      margin:0 0 6px;
+    }
+    .pvGrid{
+      column-count: 2;
+      column-gap: 10px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.25;
+      color: var(--muted);
+    }
+    .pvItem{
+      break-inside: avoid;
+      padding:2px 0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .pvDigit{
+      display:inline-block;
+      min-width: 10px;
+      text-align:center;
+      font-weight:900;
+      color: var(--text);
+    }
+    .pvDigit.hl{ color: var(--accent); text-decoration: underline; }
+    .pvPlace{ color: var(--text); font-weight:800; }
+    .pvVal{ color: var(--muted); }
+    @media (max-width: 520px){
+      .pvGrid{ column-count: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="pillRow">
+        <div class="pill">✅ <strong id="statCorrect">0</strong></div>
+        <div class="pill">❌ <strong id="statMissed">0</strong></div>
+        <div class="pill">🎯 <strong id="statStreak">0</strong></div>
+      </div>
+      <div class="pillRow">
+        <div class="pill">Level <strong id="statLevel">3</strong></div>
+        <div class="pill">Decimals <strong id="statDec">On</strong></div>
+        <div class="pill"><strong id="seedChip">#00000</strong></div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT: CONTROLS -->
+      <section class="card">
+        <div class="body">
+          <div class="row">
+            <div>
+              <label for="level">Difficulty</label>
+              <select id="level">
+                <option value="1">1 — up to Thousands (whole)</option>
+                <option value="2">2 — up to Millions (whole)</option>
+                <option value="3" selected>3 — Tenths / Hundredths / Thousandths</option>
+                <option value="4">4 — Billions + Thousandths</option>
+                <option value="5">5 — Big + Ten-Thousandths</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="btnRow">
+            <button class="primary" id="newBtn">New</button>
+            <button class="good" id="actionBtnLeft">Check answer</button>
+            <button class="mutedBtn" id="revealBtn">Reveal</button>
+            <button class="danger" id="resetBtn">Reset</button>
+          </div>
+
+          <details>
+            <summary>Quick tip</summary>
+            <div class="hintBody">
+              Start at the decimal point: <strong>ones</strong> is just left, <strong>tenths</strong> is just right, then count outward.
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- RIGHT: PROBLEM -->
+      <section class="card">
+        <div class="body noScroll">
+          <!-- <div class="panelTitle">Place name of the underlined digit</div> -->
+
+          <div class="bigNumber" id="displayNumber">—</div>
+          <p class="sub" id="subLine">Select the place name from the dropdown, then check your answer.</p>
+
+          <div class="answerArea" id="answerArea">
+            <div class="inline">
+              <div class="grow">
+                <!-- <label for="answerSelect">Place name</label> -->
+                <select id="answerSelect"></select>
+              </div>
+              <div class="btnBox">
+                <label>&nbsp;</label>
+                <button class="good" style="width:100%;" id="actionBtnRight">Check answer</button>
+              </div>
+            </div>
+
+            <div class="feedback" id="feedback"></div>
+
+            <details id="workDetails" style="display:none;">
+              <summary>Explanation</summary>
+              <div class="hintBody" id="workBody"></div>
+            </details>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Utilities ----------
+    const $ = (sel) => document.querySelector(sel);
+    function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min; }
+    function choice(arr){ return arr[randInt(0, arr.length-1)]; }
+
+    function placeNameForPosition(pos){
+      const whole = [
+        "ones","tens","hundreds",
+        "thousands","ten-thousands","hundred-thousands",
+        "millions","ten-millions","hundred-millions",
+        "billions","ten-billions","hundred-billions",
+        "trillions"
+      ];
+      const dec = [
+        "tenths","hundredths","thousandths","ten-thousandths","hundred-thousandths","millionths"
+      ];
+      if(pos >= 0) return whole[pos] || (pos + " place");
+      const idx = (-pos) - 1;
+      return dec[idx] || ("1/" + Math.pow(10, -pos) + " place");
+    }
+
+    function highlightDigitHTML(numberPlain, highlightIndex){
+      const [intPlain, decPlain=""] = numberPlain.split(".");
+      const intLen = intPlain.length;
+
+      let html = "";
+      for(let i=0;i<intLen;i++){
+        const digitsLeft = intLen - i;
+        if(i !== 0 && digitsLeft % 3 === 0) html += `<span aria-hidden="true">,</span>`;
+        const ch = intPlain[i];
+        const plainIndex = i;
+        if(plainIndex === highlightIndex){
+          html += `<span style="color:var(--accent); font-weight:900; text-decoration: underline;">${ch}</span>`;
+        } else html += `<span>${ch}</span>`;
+      }
+      if(decPlain !== ""){
+        html += `<span aria-hidden="true">.</span>`;
+        for(let j=0;j<decPlain.length;j++){
+          const ch = decPlain[j];
+          const plainIndex = intLen + 1 + j;
+          if(plainIndex === highlightIndex){
+            html += `<span style="color:var(--accent); font-weight:900; text-decoration: underline;">${ch}</span>`;
+          } else html += `<span>${ch}</span>`;
+        }
+      }
+      return html;
+    }
+
+    function buildNumberFromDigits(intDigits, decDigits){
+      let intStr = intDigits.join("").replace(/^0+(?=\d)/, "");
+      if(intStr === "") intStr = "0";
+      if(decDigits && decDigits.length) return intStr + "." + decDigits.join("");
+      return intStr;
+    }
+
+    function randomDigits(len, firstCannotBeZero=true){
+      // zeros allowed in any non-leading position (always)
+      const arr = [];
+      for(let i=0;i<len;i++){
+        let d;
+        if(i === 0 && firstCannotBeZero) d = randInt(1,9);
+        else d = randInt(0,9);
+        arr.push(String(d));
+      }
+      return arr;
+    }
+
+    function sanitizePlaceName(s){
+      return (s||"")
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_]+/g,"-")
+        .replace(/[^a-z0-9\-]/g,"");
+    }
+
+    function addCommasIntString(intStr){
+      if(intStr.length <= 3) return intStr;
+      let out = "", i = intStr.length;
+      while(i > 3){
+        out = "," + intStr.slice(i-3, i) + out;
+        i -= 3;
+      }
+      return intStr.slice(0,i) + out;
+    }
+
+    function plainToDisplayString(plain){
+      const [a,b=""] = plain.split(".");
+      const withCommas = addCommasIntString(a);
+      return b ? (withCommas + "." + b) : withCommas;
+    }
+
+    function getDigitMetaList(plain){
+      const dotPos = plain.indexOf(".");
+      const intPart = dotPos === -1 ? plain : plain.slice(0, dotPos);
+      const decPart = dotPos === -1 ? "" : plain.slice(dotPos+1);
+
+      const list = [];
+
+      for(let i=0;i<intPart.length;i++){
+        const ch = intPart[i];
+        const pos = (intPart.length - 1 - i);
+        const place = placeNameForPosition(pos);
+
+        const digit = Number(ch);
+        let valStr = "0";
+        if(digit !== 0){
+          const zeros = "0".repeat(pos);
+          valStr = String(digit) + zeros;
+        }
+        valStr = addCommasIntString(valStr);
+
+        list.push({
+          digitChar: ch,
+          place,
+          valueStr: valStr,
+          plainIndex: i
+        });
+      }
+
+      if(decPart){
+        for(let j=0;j<decPart.length;j++){
+          const ch = decPart[j];
+          const pos = -(j+1);
+          const place = placeNameForPosition(pos);
+          const digit = Number(ch);
+          const denom = Math.pow(10, j+1);
+          const valueStr = digit === 0 ? "0" : `${digit}/${denom}`;
+
+          list.push({
+            digitChar: ch,
+            place,
+            valueStr,
+            plainIndex: intPart.length + 1 + j
+          });
+        }
+      }
+
+      return list;
+    }
+
+    // ---------- State (NO persistence) ----------
+    const state = {
+      correct: 0,
+      missed: 0,
+      streak: 0,
+      current: null,
+      seed: 0,
+      awaitingNext: false
+    };
+
+    // ---------- Dropdown Options ----------
+    const WHOLE_PLACES = [
+      "ones","tens","hundreds",
+      "thousands","ten-thousands","hundred-thousands",
+      "millions","ten-millions","hundred-millions",
+      "billions","ten-billions","hundred-billions",
+      "trillions"
+    ];
+    const DEC_PLACES = [
+      "tenths","hundredths","thousandths","ten-thousandths","hundred-thousandths","millionths"
+    ];
+
+    function levelHasDecimals(level){
+      // Levels 1-2: no decimals. Levels 3-5: decimals always.
+      return level >= 3;
+    }
+
+    function buildPlaceOptions(level){
+      if(level === 3){
+        return ["tenths","hundredths","thousandths"];
+      }
+
+      let maxWholeIndex = 2;
+      if(level === 1) maxWholeIndex = 3;
+      else if(level === 2) maxWholeIndex = 6;
+      else if(level === 4) maxWholeIndex = 9;
+      else maxWholeIndex = 11;
+
+      let maxDecIndex = -1;
+      if(levelHasDecimals(level)){
+        if(level === 4) maxDecIndex = 2;
+        else if(level === 5) maxDecIndex = 3;
+      }
+
+      const opts = [];
+      for(let i=0;i<=maxWholeIndex;i++) opts.push(WHOLE_PLACES[i]);
+      if(maxDecIndex >= 0){
+        for(let j=0;j<=maxDecIndex;j++) opts.push(DEC_PLACES[j]);
+      }
+      return opts;
+    }
+
+    function populateDropdown(level){
+      const sel = $("#answerSelect");
+      const opts = buildPlaceOptions(level);
+
+      sel.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "— Select —";
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      sel.appendChild(placeholder);
+
+      for(const o of opts){
+        const opt = document.createElement("option");
+        opt.value = o;
+        opt.textContent = o;
+        sel.appendChild(opt);
+      }
+    }
+
+    // ---------- UI ----------
+    function setStatsUI(){
+      $("#statCorrect").textContent = state.correct;
+      $("#statMissed").textContent = state.missed;
+      $("#statStreak").textContent = state.streak;
+
+      const lv = Number($("#level").value);
+      $("#statLevel").textContent = lv;
+      $("#statDec").textContent = levelHasDecimals(lv) ? "On" : "Off";
+    }
+
+    function setActionMode(isNext){
+      state.awaitingNext = isNext;
+      const label = isNext ? "Next problem" : "Check answer";
+      $("#actionBtnLeft").textContent = label;
+      $("#actionBtnRight").textContent = label;
+      $("#answerSelect").disabled = isNext;
+    }
+
+    function showFeedback(kind, msg){
+      const el = $("#feedback");
+      if(kind === "ok") el.innerHTML = `<span class="ok">Correct.</span> ${msg ? " " + msg : ""}`;
+      else if(kind === "no") el.innerHTML = `<span class="no">Not quite.</span> ${msg ? " " + msg : ""}`;
+      else el.innerHTML = `<span class="warn">Note:</span> ${msg || ""}`;
+    }
+
+    // ---------- Problem Generation ----------
+    function genProblem(){
+      const level = Number($("#level").value);
+      const allowDecimals = levelHasDecimals(level);
+
+      state.seed = (Date.now() % 100000);
+      $("#seedChip").textContent = "#" + String(state.seed).padStart(5,"0");
+
+      let intLenMin=2, intLenMax=4, decLenMin=0, decLenMax=0;
+
+      if(level === 1){
+        intLenMin=2; intLenMax=4; decLenMin=0; decLenMax=0;
+      } else if(level === 2){
+        intLenMin=4; intLenMax=7; decLenMin=0; decLenMax=0;
+      } else if(level === 3){
+        intLenMin=1; intLenMax=4;
+        decLenMin=3; decLenMax=3; // exactly 3 decimal places
+      } else if(level === 4){
+        intLenMin=7; intLenMax=10; decLenMin=0; decLenMax=3;
+      } else {
+        intLenMin=8; intLenMax=12; decLenMin=0; decLenMax=4;
+      }
+
+      const intLen = randInt(intLenMin, intLenMax);
+
+      let decLen = 0;
+      if(allowDecimals){
+        decLen = randInt(decLenMin, decLenMax);
+        if(level !== 3 && level >= 4 && decLen === 0 && Math.random() < 0.55){
+          decLen = Math.max(1, decLenMax);
+          if(decLenMax > 1) decLen = randInt(1, decLenMax);
+        }
+      }
+
+      const intDigits = randomDigits(intLen, true);
+      const decDigits = decLen ? randomDigits(decLen, false) : [];
+      const plain = buildNumberFromDigits(intDigits, decDigits);
+
+      // choose highlight
+      const possibleIndices = [];
+      const chars = plain.split("");
+      if(level === 3){
+        const dotPos = plain.indexOf(".");
+        for(let i=dotPos+1; i<plain.length; i++) possibleIndices.push(i);
+      } else {
+        for(let i=0;i<chars.length;i++){
+          if(chars[i] !== ".") possibleIndices.push(i);
+        }
+      }
+      const highlightIndex = choice(possibleIndices);
+
+      // compute pos relative to decimal
+      const dotPos = plain.indexOf(".");
+      let pos;
+      if(dotPos === -1){
+        pos = (plain.length - 1 - highlightIndex);
+      } else {
+        if(highlightIndex < dotPos){
+          pos = (dotPos - 1 - highlightIndex);
+        } else {
+          const decIndex = highlightIndex - dotPos - 1;
+          pos = -(decIndex + 1);
+        }
+      }
+
+      const placeName = placeNameForPosition(pos);
+      state.current = { plain, highlightIndex, pos, placeName, level, allowDecimals };
+
+      setStatsUI();
+      $("#displayNumber").innerHTML = highlightDigitHTML(plain, highlightIndex);
+      $("#workDetails").style.display = "none";
+      $("#workBody").innerHTML = "";
+      $("#feedback").textContent = "";
+
+      populateDropdown(level);
+      setActionMode(false);
+
+      $("#answerSelect").focus();
+    }
+
+    // ---------- Explanation builder ----------
+    function buildPlaceValueBreakdownHTML(p){
+      const displayNum = plainToDisplayString(p.plain);
+      const meta = getDigitMetaList(p.plain);
+
+      let items = "";
+      for(const m of meta){
+        const isHL = (m.plainIndex === p.highlightIndex);
+        items += `
+          <div class="pvItem" title="${m.digitChar} ${m.place} = ${m.valueStr}">
+            <span class="pvDigit ${isHL ? "hl" : ""}">${m.digitChar}</span>
+            <span class="pvVal"> — </span>
+            <span class="pvPlace">${m.place}</span>
+            <span class="pvVal"> = ${m.valueStr}</span>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="pvWrap">
+          <div class="pvTitle">Original number: <span style="font-family:var(--mono); color:var(--text); font-weight:900;">${displayNum}</span></div>
+          <div class="pvGrid">${items}</div>
+        </div>
+      `;
+    }
+
+    // ---------- Actions ----------
+    function check(){
+      const p = state.current;
+      if(!p) return;
+
+      const selected = $("#answerSelect").value;
+      if(!selected){
+        showFeedback("warn", "Pick an option from the dropdown.");
+        return;
+      }
+
+      const correctName = p.placeName;
+
+      // Safety: ensure correct answer exists in dropdown
+      const sel = $("#answerSelect");
+      const hasCorrect = Array.from(sel.options).some(o => sanitizePlaceName(o.value) === sanitizePlaceName(correctName));
+      if(!hasCorrect){
+        const opt = document.createElement("option");
+        opt.value = correctName;
+        opt.textContent = correctName;
+        sel.appendChild(opt);
+      }
+
+      const student = sanitizePlaceName(selected);
+      const correct = sanitizePlaceName(correctName);
+      const isCorrect = (student === correct) || (student.replace(/-/g,"") === correct.replace(/-/g,""));
+
+      if(isCorrect){
+        state.correct++;
+        state.streak++;
+        setStatsUI();
+        showFeedback("ok", "Click “Next problem” to continue.");
+        $("#workBody").innerHTML = `
+          <div><strong>Yes:</strong> the underlined digit is in the <strong>${correctName}</strong> place.</div>
+          <div style="margin-top:6px;">Tip: ones is just left of the decimal point; tenths is just right.</div>
+        `;
+        $("#workDetails").style.display = "";
+        setActionMode(true);
+      } else {
+        state.missed++;
+        state.streak = 0;
+        setStatsUI();
+        showFeedback("no", `Correct answer: <span style="font-family:var(--mono); color:var(--text); font-weight:900;">${correctName}</span>`);
+        $("#workBody").innerHTML = `
+          <div>The underlined digit is in the <strong>${correctName}</strong> place.</div>
+          <div style="margin-top:6px;">Start at the decimal point and count outward.</div>
+        `;
+        $("#workDetails").style.display = "";
+        setActionMode(false);
+      }
+    }
+
+    function nextOrCheck(){
+      if(state.awaitingNext) genProblem();
+      else check();
+    }
+
+    function reveal(){
+      const p = state.current;
+      if(!p) return;
+
+      // Reveal breaks streak
+      state.streak = 0;
+      setStatsUI();
+
+      const correctName = p.placeName;
+
+      $("#workBody").innerHTML = `
+        <div><strong>Revealed:</strong> the underlined digit is in the <strong>${correctName}</strong> place.</div>
+        ${buildPlaceValueBreakdownHTML(p)}
+      `;
+      $("#workDetails").style.display = "";
+      $("#workDetails").open = true;
+      showFeedback("warn", `Answer revealed: <span style="font-family:var(--mono); color:var(--text); font-weight:900;">${correctName}</span>`);
+    }
+
+    function resetStats(){
+      state.correct = 0; state.missed = 0; state.streak = 0;
+      setStatsUI();
+      showFeedback("warn", "Stats reset.");
+    }
+
+    // ---------- Events ----------
+    $("#newBtn").addEventListener("click", genProblem);
+    $("#actionBtnLeft").addEventListener("click", nextOrCheck);
+    $("#actionBtnRight").addEventListener("click", nextOrCheck);
+    $("#revealBtn").addEventListener("click", reveal);
+    $("#resetBtn").addEventListener("click", resetStats);
+
+    $("#level").addEventListener("change", genProblem);
+
+    $("#answerSelect").addEventListener("keydown", (e) => {
+      if(e.key === "Enter"){
+        e.preventDefault();
+        nextOrCheck();
+      }
+    });
+
+    window.addEventListener("keydown", (e) => {
+      const tag = (document.activeElement && document.activeElement.tagName) ? document.activeElement.tagName.toLowerCase() : "";
+      const typing = (tag === "input" || tag === "textarea");
+      if(typing) return;
+
+      if(e.key.toLowerCase() === "n"){ e.preventDefault(); genProblem(); }
+      if(e.key === "Enter"){ e.preventDefault(); nextOrCheck(); }
+    });
+
+    // ---------- Init ----------
+    setStatsUI();     // stats always start at 0 on refresh
+    genProblem();     // show a problem immediately on load
+  </script>
+</body>
+</html>
