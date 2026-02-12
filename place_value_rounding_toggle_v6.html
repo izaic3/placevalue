@@ -1,0 +1,1216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Place Value / Rounding (Dropdown + Toggle)</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --panel:#101823; --panel2:#0f1620; --text:#e6eef7; --muted:#9bb0c6;
+      --line:#1d2a3a; --accent:#5bd6ff; --good:#7cff9b; --bad:#ff6b6b; --warn:#ffd36a;
+      --radius:16px;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      background: radial-gradient(1200px 700px at 20% -10%, rgba(91,214,255,.18), transparent 55%),
+                  radial-gradient(1000px 600px at 90% 0%, rgba(124,255,155,.12), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      overflow:hidden; /* no page scrolling */
+    }
+    .wrap{
+      height:100vh;
+      max-width:1100px;
+      margin:0 auto;
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:10px 12px;
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(16,24,35,.92), rgba(16,24,35,.78));
+      box-shadow: var(--shadow);
+      min-height: 54px;
+    }
+    .pillRow{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .pill{
+      border:1px solid var(--line);
+      border-radius: 999px;
+      padding:6px 10px;
+      background: rgba(15,22,32,.85);
+      font-size:13px;
+      color: var(--muted);
+      white-space:nowrap;
+    }
+    .pill strong{ color: var(--text); font-weight:800; }
+
+    .grid{
+      flex:1 1 auto;
+      display:grid;
+      grid-template-columns: 340px 1fr;
+      gap:10px;
+      min-height:0;
+    }
+    @media (max-width: 900px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(16,24,35,.72);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+    }
+    .card .body{
+      padding:12px;
+      flex:1 1 auto;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    select, input[type="text"]{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius: 12px;
+      padding:10px 10px;
+      background: rgba(11,15,20,.75);
+      color: var(--text);
+      font-size:14px;
+      outline:none;
+      font-family: var(--sans);
+    }
+    input[type="text"]{ font-family: var(--mono); }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .row > *{ flex:1 1 140px; }
+
+    .btnRow{ display:flex; gap:10px; flex-wrap:wrap; }
+    button{
+      flex: 1 1 140px;
+      border:1px solid var(--line);
+      border-radius: 14px;
+      padding:10px 12px;
+      background: rgba(15,22,32,.9);
+      color: var(--text);
+      font-weight:800;
+      cursor:pointer;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease;
+    }
+    button:hover{ border-color: rgba(91,214,255,.55); }
+    button:active{ transform: translateY(1px); }
+    .primary{
+      background: linear-gradient(180deg, rgba(91,214,255,.22), rgba(15,22,32,.92));
+      border-color: rgba(91,214,255,.6);
+    }
+    .good{
+      background: linear-gradient(180deg, rgba(124,255,155,.18), rgba(15,22,32,.92));
+      border-color: rgba(124,255,155,.55);
+    }
+    .danger{
+      background: linear-gradient(180deg, rgba(255,107,107,.18), rgba(15,22,32,.92));
+      border-color: rgba(255,107,107,.55);
+    }
+    .mutedBtn{ color: var(--muted); font-weight:800; }
+
+    /* Toggle */
+    .toggleRow{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px;
+      border:1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(11,15,20,.55);
+      gap:12px;
+    }
+    .toggleLabel{
+      display:flex; flex-direction:column; gap:2px;
+      min-width: 0;
+    }
+    .toggleLabel .title{ font-weight:900; color:var(--text); font-size:13px; }
+    .toggleLabel .desc{ color:var(--muted); font-size:12px; line-height:1.2; }
+    .switch{
+      position:relative;
+      width: 56px;
+      height: 30px;
+      flex: 0 0 auto;
+    }
+    .switch input{ opacity:0; width:0; height:0; }
+    .slider{
+      position:absolute; inset:0;
+      background: rgba(15,22,32,.9);
+      border:1px solid var(--line);
+      border-radius: 999px;
+      transition: .2s;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.25);
+    }
+    .slider:before{
+      content:"";
+      position:absolute;
+      height: 24px; width: 24px;
+      left: 3px; top: 2px;
+      background: rgba(230,238,247,.95);
+      border-radius: 50%;
+      transition: .2s;
+      box-shadow: 0 6px 14px rgba(0,0,0,.35);
+    }
+    .switch input:checked + .slider{
+      border-color: rgba(91,214,255,.65);
+      background: linear-gradient(180deg, rgba(91,214,255,.18), rgba(15,22,32,.92));
+    }
+    .switch input:checked + .slider:before{
+      transform: translateX(26px);
+      background: rgba(91,214,255,.98);
+    }
+
+    /* Problem area */
+    .bigNumber{
+      font-family: var(--mono);
+      font-size: clamp(34px, 4.6vw, 64px);
+      letter-spacing: .5px;
+      line-height:1.05;
+      margin: 0;
+      word-break: break-word;
+    }
+    .sub{
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height:1.25;
+    }
+    .targetChip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(91,214,255,.35);
+      background: rgba(15,22,32,.55);
+      font-size: 13px;
+      color: var(--text);
+      font-weight:900;
+      margin-top: 4px;
+      width: fit-content;
+      max-width: 100%;
+    }
+    .targetChip span{ color: var(--accent); }
+
+    .answerArea{ display:grid; gap:10px; margin-top:2px; }
+    .inline{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+    .inline .grow{ flex: 1 1 220px; }
+    .inline .btnBox{ flex: 0 0 180px; }
+    @media (max-width: 520px){
+      .inline .btnBox{ flex: 1 1 160px; }
+    }
+
+    .feedback{
+      border:1px dashed rgba(155,176,198,.35);
+      border-radius: 14px;
+      padding:10px 12px;
+      background: rgba(15,22,32,.35);
+      min-height: 44px;
+      font-size:14px;
+    }
+    .feedback .ok{ color: var(--good); font-weight:900; }
+    .feedback .no{ color: var(--bad); font-weight:900; }
+    .feedback .warn{ color: var(--warn); font-weight:900; }
+
+    details{
+      border:1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(11,15,20,.55);
+      overflow:hidden;
+    }
+    summary{
+      cursor:pointer;
+      padding:10px 12px;
+      font-weight:900;
+      user-select:none;
+      list-style:none;
+    }
+    summary::-webkit-details-marker{ display:none; }
+    .hintBody{ padding: 0 12px 12px; color: var(--muted); line-height:1.35; font-size:13px; }
+
+    .noScroll{ overflow:hidden; }
+
+    /* Compact "place value of each digit" layout (fits without scrolling) */
+    .pvWrap{
+      margin-top:8px;
+      border:1px solid rgba(155,176,198,.2);
+      border-radius:12px;
+      background: rgba(16,24,35,.55);
+      padding:8px;
+    }
+    .pvTitle{
+      font-weight:900;
+      color: var(--text);
+      font-size:12px;
+      margin:0 0 6px;
+    }
+    .pvGrid{
+      column-count: 2;
+      column-gap: 10px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.25;
+      color: var(--muted);
+    }
+    .pvItem{
+      break-inside: avoid;
+      padding:2px 0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .pvDigit{
+      display:inline-block;
+      min-width: 10px;
+      text-align:center;
+      font-weight:900;
+      color: var(--text);
+    }
+    .pvDigit.hl{ color: var(--accent); text-decoration: underline; }
+    .pvPlace{ color: var(--text); font-weight:800; }
+    .pvVal{ color: var(--muted); }
+    @media (max-width: 520px){
+      .pvGrid{ column-count: 1; }
+    }
+
+    .smallNote{
+      font-size:12px;
+      color: var(--muted);
+      margin-top: -2px;
+      line-height: 1.2;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="pillRow">
+        <div class="pill">✅ <strong id="statCorrect">0</strong></div>
+        <div class="pill">❌ <strong id="statMissed">0</strong></div>
+        <div class="pill">🎯 <strong id="statStreak">0</strong></div>
+      </div>
+      <div class="pillRow">
+        <div class="pill">Mode <strong id="statMode">Place value</strong></div>
+        <div class="pill">Level <strong id="statLevel">3</strong></div>
+        <div class="pill">Decimals <strong id="statDec">On</strong></div>
+        <div class="pill"><strong id="seedChip">#00000</strong></div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT: CONTROLS -->
+      <section class="card">
+        <div class="body">
+          <div class="row">
+            <div>
+              <label for="level">Difficulty</label>
+              <select id="level">
+                <option value="1">1 — up to Thousands (whole)</option>
+                <option value="2">2 — up to Millions (whole)</option>
+                <option value="3" selected>3 — Tenths / Hundredths / Thousandths</option>
+                <option value="4">4 — Billions + Thousandths</option>
+                <option value="5">5 — Big + Ten-Thousandths</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="toggleRow" title="Toggle between identifying the place value and rounding to a given place value.">
+            <div class="toggleLabel">
+              <div class="title">Place value ↔ Rounding</div>
+              <div class="desc">Off = place value • On = round to a target place</div>
+            </div>
+            <label class="switch" aria-label="Toggle rounding mode">
+              <input id="modeToggle" type="checkbox" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="btnRow">
+            <button class="primary" id="newBtn">New</button>
+            <button class="good" id="actionBtnLeft">Check answer</button>
+            <button class="mutedBtn" id="revealBtn">Reveal</button>
+            <button class="danger" id="resetBtn">Reset</button>
+          </div>
+
+          <details>
+            <summary>Quick tip</summary>
+            <div class="hintBody" id="tipBody">
+              Start at the decimal point: <strong>ones</strong> is just left, <strong>tenths</strong> is just right, then count outward.
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- RIGHT: PROBLEM -->
+      <section class="card">
+        <div class="body noScroll">
+          <div class="bigNumber" id="displayNumber">—</div>
+          <p class="sub" id="subLine">Select the place name from the dropdown, then check your answer.</p>
+          <div class="targetChip" id="targetChip" style="display:none;">Round to nearest <span id="targetPlace">ones</span></div>
+
+          <div class="answerArea" id="answerArea">
+            <!-- PLACE VALUE UI -->
+            <div class="inline" id="pvAnswerRow">
+              <div class="grow">
+                <select id="answerSelect"></select>
+              </div>
+              <div class="btnBox">
+                <label>&nbsp;</label>
+                <button class="good" style="width:100%;" id="actionBtnRight">Check answer</button>
+              </div>
+            </div>
+
+            <!-- ROUNDING UI -->
+            <div class="inline" id="roundAnswerRow" style="display:none;">
+              <div class="grow">
+                <input id="roundInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"
+                       placeholder="Type the rounded number (commas optional)" />
+                <div class="smallNote" id="roundNote">Example formatting: 12,340 or 12.3</div>
+              </div>
+              <div class="btnBox">
+                <label>&nbsp;</label>
+                <button class="good" style="width:100%;" id="actionBtnRight2">Check answer</button>
+              </div>
+            </div>
+
+            <div class="feedback" id="feedback"></div>
+
+            <details id="workDetails" style="display:none;">
+              <summary>Explanation</summary>
+              <div class="hintBody" id="workBody"></div>
+            </details>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Utilities ----------
+    const $ = (sel) => document.querySelector(sel);
+    function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min; }
+    function choice(arr){ return arr[randInt(0, arr.length-1)]; }
+
+    function placeNameForPosition(pos){
+      const whole = [
+        "ones","tens","hundreds",
+        "thousands","ten-thousands","hundred-thousands",
+        "millions","ten-millions","hundred-millions",
+        "billions","ten-billions","hundred-billions",
+        "trillions"
+      ];
+      const dec = [
+        "tenths","hundredths","thousandths","ten-thousandths","hundred-thousandths","millionths"
+      ];
+      if(pos >= 0) return whole[pos] || (pos + " place");
+      const idx = (-pos) - 1;
+      return dec[idx] || ("1/" + Math.pow(10, -pos) + " place");
+    }
+
+    function highlightDigitHTML(numberPlain, highlightIndex){
+      const [intPlain, decPlain=""] = numberPlain.split(".");
+      const intLen = intPlain.length;
+
+      let html = "";
+      for(let i=0;i<intLen;i++){
+        const digitsLeft = intLen - i;
+        if(i !== 0 && digitsLeft % 3 === 0) html += `<span aria-hidden="true">,</span>`;
+        const ch = intPlain[i];
+        const plainIndex = i;
+        if(plainIndex === highlightIndex){
+          html += `<span style="color:var(--accent); font-weight:900; text-decoration: underline;">${ch}</span>`;
+        } else html += `<span>${ch}</span>`;
+      }
+      if(decPlain !== ""){
+        html += `<span aria-hidden="true">.</span>`;
+        for(let j=0;j<decPlain.length;j++){
+          const ch = decPlain[j];
+          const plainIndex = intLen + 1 + j;
+          if(plainIndex === highlightIndex){
+            html += `<span style="color:var(--accent); font-weight:900; text-decoration: underline;">${ch}</span>`;
+          } else html += `<span>${ch}</span>`;
+        }
+      }
+      return html;
+    }
+
+    function buildNumberFromDigits(intDigits, decDigits){
+      let intStr = intDigits.join("").replace(/^0+(?=\d)/, "");
+      if(intStr === "") intStr = "0";
+      if(decDigits && decDigits.length) return intStr + "." + decDigits.join("");
+      return intStr;
+    }
+
+    function randomDigits(len, firstCannotBeZero=true){
+      // zeros allowed in any non-leading position (always)
+      const arr = [];
+      for(let i=0;i<len;i++){
+        let d;
+        if(i === 0 && firstCannotBeZero) d = randInt(1,9);
+        else d = randInt(0,9);
+        arr.push(String(d));
+      }
+      return arr;
+    }
+
+    function sanitizePlaceName(s){
+      return (s||"")
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_]+/g,"-")
+        .replace(/[^a-z0-9\-]/g,"");
+    }
+
+    function addCommasIntString(intStr){
+      if(intStr.length <= 3) return intStr;
+      let out = "", i = intStr.length;
+      while(i > 3){
+        out = "," + intStr.slice(i-3, i) + out;
+        i -= 3;
+      }
+      return intStr.slice(0,i) + out;
+    }
+
+    function plainToDisplayString(plain){
+      const [a,b=""] = plain.split(".");
+      const withCommas = addCommasIntString(a);
+      return b ? (withCommas + "." + b) : withCommas;
+    }
+
+    function getDigitMetaList(plain){
+      const dotPos = plain.indexOf(".");
+      const intPart = dotPos === -1 ? plain : plain.slice(0, dotPos);
+      const decPart = dotPos === -1 ? "" : plain.slice(dotPos+1);
+
+      const list = [];
+
+      for(let i=0;i<intPart.length;i++){
+        const ch = intPart[i];
+        const pos = (intPart.length - 1 - i);
+        const place = placeNameForPosition(pos);
+
+        const digit = Number(ch);
+        let valStr = "0";
+        if(digit !== 0){
+          const zeros = "0".repeat(pos);
+          valStr = String(digit) + zeros;
+        }
+        valStr = addCommasIntString(valStr);
+
+        list.push({
+          digitChar: ch,
+          place,
+          valueStr: valStr,
+          plainIndex: i,
+          pos
+        });
+      }
+
+      if(decPart){
+        for(let j=0;j<decPart.length;j++){
+          const ch = decPart[j];
+          const pos = -(j+1);
+          const place = placeNameForPosition(pos);
+          const digit = Number(ch);
+          const denom = Math.pow(10, j+1);
+          const valueStr = digit === 0 ? "0" : `${digit}/${denom}`;
+
+          list.push({
+            digitChar: ch,
+            place,
+            valueStr,
+            plainIndex: intPart.length + 1 + j,
+            pos
+          });
+        }
+      }
+
+      return list;
+    }
+
+    function indexToPos(plain, plainIndex){
+      const dotPos = plain.indexOf(".");
+      if(dotPos === -1){
+        return (plain.length - 1 - plainIndex);
+      }
+      if(plainIndex < dotPos){
+        return (dotPos - 1 - plainIndex);
+      }
+      // after dot
+      const decIndex = plainIndex - dotPos - 1;
+      return -(decIndex + 1);
+    }
+
+    function posToIndexIfExists(plain, pos){
+      const dotPos = plain.indexOf(".");
+      const intPart = dotPos === -1 ? plain : plain.slice(0, dotPos);
+      const decPart = dotPos === -1 ? "" : plain.slice(dotPos+1);
+
+      if(pos >= 0){
+        const i = intPart.length - 1 - pos;
+        if(i < 0 || i >= intPart.length) return null;
+        return i;
+      } else {
+        const j = (-pos) - 1;
+        if(j < 0 || j >= decPart.length) return null;
+        return intPart.length + 1 + j;
+      }
+    }
+
+    function pow10Big(n){
+      // n >= 0
+      let out = 1n;
+      for(let i=0;i<n;i++) out *= 10n;
+      return out;
+    }
+
+    function parsePlainToScaledBigInt(plain, targetDecimals){
+      // Returns BigInt representing value * 10^targetDecimals
+      // Accepts plain like "1234.560", assumes non-negative.
+      const s = (plain || "").trim();
+      const parts = s.split(".");
+      const a = (parts[0] || "0").replace(/^0+(?=\d)/, "") || "0";
+      const b = (parts[1] || "");
+      const d = targetDecimals;
+
+      let dec = b;
+      if(dec.length < d) dec = dec + "0".repeat(d - dec.length);
+      else if(dec.length > d) dec = dec.slice(0, d); // caller ensures this is safe when used
+      const combined = (a + dec).replace(/^0+(?=\d)/, "") || "0";
+      return BigInt(combined);
+    }
+
+    function roundPlainToPos(plain, pos){
+      // Rounds non-negative plain number to the given place value position.
+      // pos: ones=0, tens=1, tenths=-1, hundredths=-2, ...
+      const parts = plain.split(".");
+      const intPart = parts[0] || "0";
+      const decPart = parts[1] || "";
+      const d = Math.max(0, -pos);         // decimals in output
+      const k = Math.max(decPart.length, d); // scale we use internally
+
+      // build scaled integer N = value * 10^k
+      const paddedDec = decPart + "0".repeat(k - decPart.length);
+      const combined = (intPart.replace(/^0+(?=\d)/, "") || "0") + paddedDec;
+      const N = BigInt(combined.replace(/^0+(?=\d)/, "") || "0");
+
+      // step in scaled units (10^(k+pos))
+      const exp = k + pos; // could be 0+
+      let rounded = N;
+      if(exp > 0){
+        const step = pow10Big(exp);
+        const half = step / 2n; // ok for powers of 10 (and exp>0 => even)
+        rounded = ((N + half) / step) * step;
+      } else {
+        // exp == 0 means rounding to the exact unit of current scale; nothing changes
+        // exp < 0 would mean rounding to a more precise place than our scale; but k >= d ensures this won't happen for needed places
+        // still, guard:
+        rounded = N;
+      }
+
+      // convert to output scale d
+      const down = k - d;
+      const outScaled = (down > 0) ? (rounded / pow10Big(down)) : rounded;
+
+      // format outScaled with d decimals
+      let sOut = outScaled.toString();
+      if(d === 0){
+        // ensure at least 1 digit
+        sOut = sOut.replace(/^0+(?=\d)/, "") || "0";
+        return sOut;
+      } else {
+        if(sOut.length <= d){
+          sOut = "0".repeat(d + 1 - sOut.length) + sOut;
+        }
+        const cut = sOut.length - d;
+        const a2 = sOut.slice(0, cut);
+        const b2 = sOut.slice(cut);
+        return (a2.replace(/^0+(?=\d)/, "") || "0") + "." + b2;
+      }
+    }
+
+    function compareStudentToCorrect(studentRaw, correctPlain, requiredDecimals){
+      // Compare by exact value at requiredDecimals scale.
+      // Allows commas, spaces, and extra trailing zeros.
+      if(!studentRaw) return false;
+      let s = studentRaw.toString().trim();
+      if(!s) return false;
+      s = s.replace(/,/g,"").replace(/\s+/g,"");
+
+      // Reject invalid chars except digits and one dot
+      if(!/^\d*\.?\d*$/.test(s)) return false;
+      if(s === "." || s === "") return false;
+
+      let [a,b=""] = s.split(".");
+      if(a === "") a = "0";
+      a = a.replace(/^0+(?=\d)/, "") || "0";
+
+      // If too many decimals, only allow if the extras are all zeros
+      if(b.length > requiredDecimals){
+        const extra = b.slice(requiredDecimals);
+        if(!/^0*$/.test(extra)) return false;
+        b = b.slice(0, requiredDecimals);
+      }
+
+      // Pad to required decimals
+      if(b.length < requiredDecimals) b = b + "0".repeat(requiredDecimals - b.length);
+
+      const studentScaled = BigInt((a + b).replace(/^0+(?=\d)/, "") || "0");
+      const correctScaled = parsePlainToScaledBigInt(correctPlain, requiredDecimals);
+      return studentScaled === correctScaled;
+    }
+
+    function sanitizeNumericInput(raw){
+      // Allow digits, commas (ignored later), and ONE decimal point.
+      // Remove everything else immediately.
+      let s = (raw || "").toString();
+      // Keep digits, dot, comma only
+      s = s.replace(/[^0-9\.,]/g, "");
+      // If multiple dots, keep first and remove the rest
+      const firstDot = s.indexOf(".");
+      if(firstDot !== -1){
+        s = s.slice(0, firstDot+1) + s.slice(firstDot+1).replace(/\./g, "");
+      }
+      return s;
+    }
+
+    // ---------- State (NO persistence) ----------
+    const state = {
+      correct: 0,
+      missed: 0,
+      streak: 0,
+      current: null,
+      seed: 0,
+      awaitingNext: false
+    };
+
+    // ---------- Dropdown Options ----------
+    const WHOLE_PLACES = [
+      "ones","tens","hundreds",
+      "thousands","ten-thousands","hundred-thousands",
+      "millions","ten-millions","hundred-millions",
+      "billions","ten-billions","hundred-billions",
+      "trillions"
+    ];
+    const DEC_PLACES = [
+      "tenths","hundredths","thousandths","ten-thousandths","hundred-thousandths","millionths"
+    ];
+
+    function levelHasDecimals(level){
+      // Levels 1-2: no decimals. Levels 3-5: decimals always.
+      return level >= 3;
+    }
+
+    function buildPlaceOptions(level){
+      if(level === 3){
+        return ["tenths","hundredths","thousandths"];
+      }
+
+      let maxWholeIndex = 2;
+      if(level === 1) maxWholeIndex = 3;
+      else if(level === 2) maxWholeIndex = 6;
+      else if(level === 4) maxWholeIndex = 9;
+      else maxWholeIndex = 11;
+
+      let maxDecIndex = -1;
+      if(levelHasDecimals(level)){
+        if(level === 4) maxDecIndex = 2;
+        else if(level === 5) maxDecIndex = 3;
+      }
+
+      const opts = [];
+      for(let i=0;i<=maxWholeIndex;i++) opts.push(WHOLE_PLACES[i]);
+      if(maxDecIndex >= 0){
+        for(let j=0;j<=maxDecIndex;j++) opts.push(DEC_PLACES[j]);
+      }
+      return opts;
+    }
+
+    function placeNameToPos(name){
+      const n = sanitizePlaceName(name);
+      const wholeIdx = WHOLE_PLACES.indexOf(n);
+      if(wholeIdx >= 0) return wholeIdx;
+      const decIdx = DEC_PLACES.indexOf(n);
+      if(decIdx >= 0) return -(decIdx + 1);
+      return null;
+    }
+
+    function populateDropdown(level){
+      const sel = $("#answerSelect");
+      const opts = buildPlaceOptions(level);
+
+      sel.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "— Select —";
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      sel.appendChild(placeholder);
+
+      for(const o of opts){
+        const opt = document.createElement("option");
+        opt.value = o;
+        opt.textContent = o;
+        sel.appendChild(opt);
+      }
+    }
+
+    // ---------- UI ----------
+    function setStatsUI(){
+      $("#statCorrect").textContent = state.correct;
+      $("#statMissed").textContent = state.missed;
+      $("#statStreak").textContent = state.streak;
+
+      const lv = Number($("#level").value);
+      $("#statLevel").textContent = lv;
+      $("#statDec").textContent = levelHasDecimals(lv) ? "On" : "Off";
+
+      const rounding = $("#modeToggle").checked;
+      $("#statMode").textContent = rounding ? "Rounding" : "Place value";
+    }
+
+    function setActionMode(isNext){
+      state.awaitingNext = isNext;
+      const label = isNext ? "Next problem" : "Check answer";
+      $("#actionBtnLeft").textContent = label;
+      $("#actionBtnRight").textContent = label;
+      $("#actionBtnRight2").textContent = label;
+
+      const rounding = $("#modeToggle").checked;
+      $("#answerSelect").disabled = isNext || rounding;
+      $("#roundInput").disabled = isNext || !rounding;
+    }
+
+    function showFeedback(kind, msg){
+      const el = $("#feedback");
+      if(kind === "ok") el.innerHTML = `<span class="ok">Correct.</span> ${msg ? " " + msg : ""}`;
+      else if(kind === "no") el.innerHTML = `<span class="no">Not quite.</span> ${msg ? " " + msg : ""}`;
+      else el.innerHTML = `<span class="warn">Note:</span> ${msg || ""}`;
+    }
+
+    function setModeUI(){
+      const rounding = $("#modeToggle").checked;
+
+      $("#pvAnswerRow").style.display = rounding ? "none" : "";
+      $("#roundAnswerRow").style.display = rounding ? "" : "none";
+      $("#targetChip").style.display = rounding ? "" : "none";
+
+      if(rounding){
+        $("#tipBody").innerHTML = `Rounding tip: find the <strong>target place</strong>, then look at the digit <strong>just to the right</strong>. 5 or more → round up, otherwise round down.`;
+        $("#subLine").textContent = "Type the rounded number, then check your answer.";
+      } else {
+        $("#tipBody").innerHTML = `Start at the decimal point: <strong>ones</strong> is just left, <strong>tenths</strong> is just right, then count outward.`;
+        $("#subLine").textContent = "Select the place name from the dropdown, then check your answer.";
+      }
+      setStatsUI();
+    }
+
+    // ---------- Problem Generation ----------
+    function genProblem(){
+      const level = Number($("#level").value);
+      const allowDecimals = levelHasDecimals(level);
+      const rounding = $("#modeToggle").checked;
+
+      state.seed = (Date.now() % 100000);
+      $("#seedChip").textContent = "#" + String(state.seed).padStart(5,"0");
+
+      let intLenMin=2, intLenMax=4, decLenMin=0, decLenMax=0;
+
+      if(level === 1){
+        intLenMin=2; intLenMax=4; decLenMin=0; decLenMax=0;
+      } else if(level === 2){
+        intLenMin=4; intLenMax=7; decLenMin=0; decLenMax=0;
+      } else if(level === 3){
+        intLenMin=1; intLenMax=4;
+        decLenMin=3; decLenMax=3; // exactly 3 decimal places
+      } else if(level === 4){
+        intLenMin=7; intLenMax=10; decLenMin=0; decLenMax=3;
+      } else {
+        intLenMin=8; intLenMax=12; decLenMin=0; decLenMax=4;
+      }
+
+      const intLen = randInt(intLenMin, intLenMax);
+
+      let decLen = 0;
+      if(allowDecimals){
+        decLen = randInt(decLenMin, decLenMax);
+        if(level !== 3 && level >= 4 && decLen === 0 && Math.random() < 0.55){
+          decLen = Math.max(1, decLenMax);
+          if(decLenMax > 1) decLen = randInt(1, decLenMax);
+        }
+      }
+
+      const intDigits = randomDigits(intLen, true);
+      const decDigits = decLen ? randomDigits(decLen, false) : [];
+      let plain = buildNumberFromDigits(intDigits, decDigits);
+
+      // choose target / highlight
+      let highlightIndex = null;
+      let pos = null;
+      let placeName = null;
+
+      if(!rounding){
+        // PLACE VALUE: choose highlight digit as before
+        const possibleIndices = [];
+        const chars = plain.split("");
+        if(level === 3){
+          const dotPos = plain.indexOf(".");
+          for(let i=dotPos+1; i<plain.length; i++) possibleIndices.push(i);
+        } else {
+          for(let i=0;i<chars.length;i++){
+            if(chars[i] !== ".") possibleIndices.push(i);
+          }
+        }
+        highlightIndex = choice(possibleIndices);
+        pos = indexToPos(plain, highlightIndex);
+        placeName = placeNameForPosition(pos);
+      } else {
+        // ROUNDING: pick a target place value that exists in the number, from allowed options
+        const opts = buildPlaceOptions(level);
+
+        // Convert to positions and keep only those that exist in this number
+        const candidate = [];
+        for(const o of opts){
+          const p = placeNameToPos(o);
+          if(p === null) continue;
+          const idx = posToIndexIfExists(plain, p);
+          if(idx !== null) candidate.push({ place:o, pos:p, index: idx });
+        }
+
+        // Fallback: if something weird, just pick any existing digit
+        const pick = candidate.length ? choice(candidate) : (() => {
+          const chars = plain.split("");
+          const possible = [];
+          for(let i=0;i<chars.length;i++) if(chars[i] !== ".") possible.push(i);
+          const idx = choice(possible);
+          const p = indexToPos(plain, idx);
+          return { place: placeNameForPosition(p), pos: p, index: idx };
+        })();
+
+        placeName = pick.place;
+        pos = pick.pos;
+        highlightIndex = pick.index;
+      
+
+        // If rounding to a decimal place (e.g., thousandths), students need a digit to the right
+        // (e.g., ten-thousandths) MOST of the time. We'll pad an extra trailing decimal digit
+        // with high probability (still sometimes allow none).
+        if(pos < 0){
+          const wantTrailing = Math.random() < 0.8; // "most of the time"
+          if(wantTrailing){
+            const needDecLen = (-pos) + 1; // one digit to the right of the rounding place
+            const dot = plain.indexOf(".");
+            const currentDecLen = (dot === -1) ? 0 : (plain.length - dot - 1);
+            if(currentDecLen < needDecLen){
+              const extra = needDecLen - currentDecLen;
+              const extraDigits = randomDigits(extra, false);
+              const newPlain = dot === -1 ? (plain + "." + extraDigits.join("")) : (plain + extraDigits.join(""));
+              // Update plain and highlightIndex to match new string
+              // (highlightIndex remains correct because we only append to the end)
+              // Replace local variables:
+              plain = newPlain;
+            }
+          }
+        }
+}
+
+      state.current = { plain, highlightIndex, pos, placeName, level, allowDecimals, rounding };
+
+      setModeUI();
+      setStatsUI();
+
+      // In rounding mode we do NOT underline any digit (students find it themselves)
+      if(rounding){
+        $("#displayNumber").textContent = plainToDisplayString(plain);
+      } else {
+        $("#displayNumber").innerHTML = highlightDigitHTML(plain, highlightIndex);
+      }
+$("#workDetails").style.display = "none";
+      $("#workBody").innerHTML = "";
+      $("#feedback").textContent = "";
+      $("#workDetails").open = false;
+
+      populateDropdown(level);
+      $("#answerSelect").value = "";
+
+      // rounding UI setup
+      $("#targetPlace").textContent = placeName;
+      $("#roundInput").value = "";
+      const requiredDecimals = Math.max(0, -pos);
+      $("#roundNote").textContent = requiredDecimals === 0
+        ? "Example formatting: 12,340"
+        : `Include ${requiredDecimals} decimal place${requiredDecimals===1?"":"s"} (extra trailing zeros are OK).`;
+
+      setActionMode(false);
+
+      // focus
+      if(rounding) $("#roundInput").focus();
+      else $("#answerSelect").focus();
+    }
+
+    // ---------- Explanation builder ----------
+    function buildPlaceValueBreakdownHTML(p){
+      const displayNum = plainToDisplayString(p.plain);
+      const meta = getDigitMetaList(p.plain);
+
+      let items = "";
+      for(const m of meta){
+        const isHL = (m.plainIndex === p.highlightIndex);
+        items += `
+          <div class="pvItem" title="${m.digitChar} ${m.place} = ${m.valueStr}">
+            <span class="pvDigit ${isHL ? "hl" : ""}">${m.digitChar}</span>
+            <span class="pvVal"> — </span>
+            <span class="pvPlace">${m.place}</span>
+            <span class="pvVal"> = ${m.valueStr}</span>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="pvWrap">
+          <div class="pvTitle">Original number: <span style="font-family:var(--mono); color:var(--text); font-weight:900;">${displayNum}</span></div>
+          <div class="pvGrid">${items}</div>
+        </div>
+      `;
+    }
+
+    function buildRoundingExplanationHTML(p, correctPlain){
+      const target = p.placeName;
+      const targetPos = p.pos;
+      const rightPos = targetPos - 1; // the digit just to the right
+      const rightName = placeNameForPosition(rightPos);
+
+      const meta = getDigitMetaList(p.plain);
+      const rightItem = meta.find(m => m.pos === rightPos);
+
+      const rightDigit = rightItem ? rightItem.digitChar : "0";
+      const rule = (Number(rightDigit) >= 5)
+        ? `The <strong>${rightName}</strong> digit is <strong>${rightDigit}</strong>, so we round <strong>up</strong>.`
+        : `The <strong>${rightName}</strong> digit is <strong>${rightDigit}</strong>, so we round <strong>down</strong>.`;
+
+      const outDisplay = plainToDisplayString(correctPlain);
+
+      return `
+        <div><strong>Target:</strong> round to the nearest <strong>${target}</strong>.</div>
+        <div style="margin-top:6px;">Look at the digit just to the right: the <strong>${rightName}</strong> place.</div>
+        <div style="margin-top:6px;">${rule}</div>
+        <div style="margin-top:8px;"><strong>Answer:</strong> <span style="font-family:var(--mono); color:var(--text); font-weight:900;">${outDisplay}</span></div>
+        ${buildPlaceValueBreakdownHTML(p)}
+      `;
+    }
+
+    // ---------- Actions ----------
+    function checkPlaceValue(){
+      const p = state.current;
+      if(!p) return;
+
+      const selected = $("#answerSelect").value;
+      if(!selected){
+        showFeedback("warn", "Pick an option from the dropdown.");
+        return;
+      }
+
+      const correctName = p.placeName;
+
+      // Safety: ensure correct answer exists in dropdown
+      const sel = $("#answerSelect");
+      const hasCorrect = Array.from(sel.options).some(o => sanitizePlaceName(o.value) === sanitizePlaceName(correctName));
+      if(!hasCorrect){
+        const opt = document.createElement("option");
+        opt.value = correctName;
+        opt.textContent = correctName;
+        sel.appendChild(opt);
+      }
+
+      const student = sanitizePlaceName(selected);
+      const correct = sanitizePlaceName(correctName);
+      const isCorrect = (student === correct) || (student.replace(/-/g,"") === correct.replace(/-/g,""));
+
+      if(isCorrect){
+        state.correct++;
+        state.streak++;
+        setStatsUI();
+        showFeedback("ok", "Click “Next problem” to continue.");
+        $("#workBody").innerHTML = `
+          <div><strong>Yes:</strong> the underlined digit is in the <strong>${correctName}</strong> place.</div>
+          <div style="margin-top:6px;">Tip: ones is just left of the decimal point; tenths is just right.</div>
+        `;
+        $("#workDetails").style.display = "";
+        setActionMode(true);
+      } else {
+        state.missed++;
+        state.streak = 0;
+        setStatsUI();
+        showFeedback("no", `Correct answer: <span style="font-family:var(--mono); color:var(--text); font-weight:900;">${correctName}</span>`);
+        $("#workBody").innerHTML = `
+          <div>The underlined digit is in the <strong>${correctName}</strong> place.</div>
+          <div style="margin-top:6px;">Start at the decimal point and count outward.</div>
+        `;
+        $("#workDetails").style.display = "";
+        setActionMode(false);
+      }
+    }
+
+    function checkRounding(){
+      const p = state.current;
+      if(!p) return;
+
+      const correctPlain = roundPlainToPos(p.plain, p.pos);
+      const requiredDecimals = Math.max(0, -p.pos);
+      const studentRaw = $("#roundInput").value;
+
+      if(!studentRaw || !studentRaw.trim()){
+        showFeedback("warn", "Type an answer first.");
+        return;
+      }
+
+      const ok = compareStudentToCorrect(studentRaw, correctPlain, requiredDecimals);
+
+      if(ok){
+        state.correct++;
+        state.streak++;
+        setStatsUI();
+        showFeedback("ok", "Click “Next problem” to continue.");
+        $("#workBody").innerHTML = buildRoundingExplanationHTML(p, correctPlain);
+        $("#workDetails").style.display = "";
+        setActionMode(true);
+      } else {
+        state.missed++;
+        state.streak = 0;
+        setStatsUI();
+        showFeedback("no", `Correct answer: <span style="font-family:var(--mono); color:var(--text); font-weight:900;">${plainToDisplayString(correctPlain)}</span>`);
+        $("#workBody").innerHTML = buildRoundingExplanationHTML(p, correctPlain);
+        $("#workDetails").style.display = "";
+        setActionMode(false);
+        $("#roundInput").focus();
+        $("#roundInput").select();
+      }
+    }
+
+    function check(){
+      const rounding = $("#modeToggle").checked;
+      if(rounding) return checkRounding();
+      return checkPlaceValue();
+    }
+
+    function nextOrCheck(){
+      if(state.awaitingNext) genProblem();
+      else check();
+    }
+
+    function reveal(){
+      const p = state.current;
+      if(!p) return;
+
+      // Reveal breaks streak
+      state.streak = 0;
+      setStatsUI();
+
+      if(!p.rounding){
+        const correctName = p.placeName;
+        $("#workBody").innerHTML = `
+          <div><strong>Revealed:</strong> the underlined digit is in the <strong>${correctName}</strong> place.</div>
+          ${buildPlaceValueBreakdownHTML(p)}
+        `;
+        $("#workDetails").style.display = "";
+        $("#workDetails").open = true;
+        showFeedback("warn", `Answer revealed: <span style="font-family:var(--mono); color:var(--text); font-weight:900;">${correctName}</span>`);
+      } else {
+        const correctPlain = roundPlainToPos(p.plain, p.pos);
+        $("#workBody").innerHTML = `<div><strong>Revealed:</strong></div>` + buildRoundingExplanationHTML(p, correctPlain);
+        $("#workDetails").style.display = "";
+        $("#workDetails").open = true;
+        showFeedback("warn", `Answer revealed: <span style="font-family:var(--mono); color:var(--text); font-weight:900;">${plainToDisplayString(correctPlain)}</span>`);
+      }
+    }
+
+    function resetStats(){
+      state.correct = 0; state.missed = 0; state.streak = 0;
+      setStatsUI();
+      showFeedback("warn", "Stats reset.");
+    }
+
+    // ---------- Events ----------
+    $("#newBtn").addEventListener("click", () => {
+      // Reset streak when manually starting a new problem
+      if(typeof state !== "undefined" && state){
+        state.streak = 0;
+        if(typeof setStatsUI === "function") setStatsUI();
+      }
+      genProblem();
+    });
+    $("#actionBtnLeft").addEventListener("click", nextOrCheck);
+    $("#actionBtnRight").addEventListener("click", nextOrCheck);
+    $("#actionBtnRight2").addEventListener("click", nextOrCheck);
+    $("#revealBtn").addEventListener("click", reveal);
+    $("#resetBtn").addEventListener("click", resetStats);
+
+    $("#level").addEventListener("change", genProblem);
+
+    $("#modeToggle").addEventListener("change", () => {
+      setModeUI();
+      genProblem();
+    });
+
+    $("#answerSelect").addEventListener("keydown", (e) => {
+      if(e.key === "Enter"){
+        e.preventDefault();
+        nextOrCheck();
+      }
+    });
+
+    // Sanitize rounding input: digits + optional decimal point only (no letters)
+    $("#roundInput").addEventListener("input", (e) => {
+      const el = e.target;
+      const before = el.value;
+      const after = sanitizeNumericInput(before);
+      if(before !== after){
+        const caret = el.selectionStart || after.length;
+        el.value = after;
+        // Try to keep caret near where it was
+        const newPos = Math.min(caret - (before.length - after.length), after.length);
+        el.setSelectionRange(newPos, newPos);
+      }
+    });
+
+    $("#roundInput").addEventListener("keydown", (e) => {
+      if(e.key === "Enter"){
+        e.preventDefault();
+        nextOrCheck();
+      }
+    });
+
+    window.addEventListener("keydown", (e) => {
+      const tag = (document.activeElement && document.activeElement.tagName) ? document.activeElement.tagName.toLowerCase() : "";
+      const typing = (tag === "input" || tag === "textarea" || tag === "select");
+      if(typing && e.key !== "Enter") return;
+
+      if(e.key.toLowerCase() === "n"){ e.preventDefault(); genProblem(); }
+      if(e.key === "Enter"){ e.preventDefault(); nextOrCheck(); }
+    });
+
+    // ---------- Init ----------
+    setModeUI();
+    setStatsUI();     // stats always start at 0 on refresh
+    genProblem();     // show a problem immediately on load
+  </script>
+</body>
+</html>
